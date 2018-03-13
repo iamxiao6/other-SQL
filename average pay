@@ -1,0 +1,41 @@
+#平均值不包括四人以上
+SELECT SUM(porder.need_pay_amount)/COUNT(0) FROM `pos_consumption1` AS porder
+WHERE porder.people_num<=4
+AND need_pay_amount>0 ;
+
+#平均值包括四人以上
+SELECT SUM(porder.need_pay_amount)/COUNT(0)  FROM `pos_consumption1` AS porder
+WHERE  need_pay_amount>0 ;
+
+
+
+
+
+#中位数不包括四人以上
+SELECT @aa:=1;
+SELECT @bb:=1;
+SELECT @rr:=1;
+
+SELECT rank,c FROM (
+SELECT @rr AS rank ,c,CASE WHEN 1>0 THEN @rr:=@rr+1 ELSE '' END FROM (SELECT SUM(need_pay_amount)/COUNT(0)  AS c FROM pos_consumption1 WHERE need_pay_amount>0 AND people_num<=4 GROUP BY consumption_id ORDER BY c )a) a
+WHERE rank = (SELECT MAX(rank)/2 FROM (
+SELECT @aa AS rank ,c,CASE WHEN 1>0 THEN @aa:=@aa+1 ELSE '' END FROM (SELECT SUM(need_pay_amount)/COUNT(0)  AS c FROM pos_consumption1 WHERE need_pay_amount>0 AND people_num<=4  GROUP BY consumption_id ORDER BY c)a)a) 
+OR rank = (SELECT CEIL(MAX(rank)/2) FROM (
+SELECT @aa AS rank ,c,CASE WHEN 1>0 THEN @bb:=@bb+1 ELSE '' END FROM (SELECT SUM(need_pay_amount)/COUNT(0)  AS c FROM pos_consumption1  WHERE need_pay_amount>0 AND people_num<=4 GROUP BY consumption_id ORDER BY c)a)a) ;
+
+
+
+#中位数包括四人以上
+SELECT @aa:=1;
+SELECT @bb:=1;
+SELECT @rr:=1;
+
+SELECT rank,c FROM (
+SELECT @rr AS rank ,c,CASE WHEN 1>0 THEN @rr:=@rr+1 ELSE '' END FROM (SELECT SUM(need_pay_amount)/COUNT(0)  AS c FROM pos_consumption1  WHERE need_pay_amount>0 GROUP BY consumption_id ORDER BY c )a) a
+WHERE rank = (SELECT MAX(rank)/2 FROM (
+SELECT @aa AS rank ,c,CASE WHEN 1>0 THEN @aa:=@aa+1 ELSE '' END FROM (SELECT SUM(need_pay_amount)/COUNT(0)  AS c FROM pos_consumption1 WHERE need_pay_amount>0  GROUP BY consumption_id ORDER BY c)a)a) 
+OR rank = (SELECT CEIL(MAX(rank)/2) FROM (
+SELECT @aa AS rank ,c,CASE WHEN 1>0 THEN @bb:=@bb+1 ELSE '' END FROM (SELECT SUM(need_pay_amount)/COUNT(0)  AS c FROM pos_consumption1 WHERE need_pay_amount>0 GROUP BY consumption_id ORDER BY c)a)a) ;
+
+
+SELECT DISTINCT created_org FROM pos_consumption1
