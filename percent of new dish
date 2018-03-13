@@ -1,0 +1,54 @@
+#先定义函数
+DELIMITER $$
+
+USE `0008411316_pos`$$
+
+DROP FUNCTION IF EXISTS `pre_dish_name`$$
+
+CREATE DEFINER=`root`@`%` FUNCTION `pre_dish_name`(in_member_id INT ,in_bill_date VARCHAR(255)  ) RETURNS VARCHAR(255)
+BEGIN
+      DECLARE res VARCHAR(255);
+
+       SELECT GROUP_CONCAT(DISTINCT dish.`dish_name`) INTO res 
+FROM   `pos_consumption` AS conn 
+INNER JOIN pos_dining_order AS porder ON conn.consumption_id = porder.consumption_id AND conn.created_org = porder.created_org
+INNER JOIN pos_order_dish AS dish ON porder.order_id=dish.dining_order_id AND dish.created_org=porder.created_org
+#AND tag.main_flag=1
+WHERE conn.`status_code`=1 AND conn.member_id<>0 
+#AND conn.need_pay_amount/conn.people_num>@avg_shop
+#AND conn.people_num>=2 and conn.people_num<=4
+#AND mm.zcount>=2 
+#and tag.main_flag=1 
+#and tag.top_type<>'锅底' 
+#and tag.dish_raw is not null
+AND conn.member_id=in_member_id
+AND conn.bill_date<in_bill_date;
+
+    RETURN    (res);
+    END$$
+
+DELIMITER ;
+
+##吃过的新菜占比
+SELECT member_id,rank,新菜占比 FROM (
+SELECT member_id,CASE 
+WHEN @member_id =member_id THEN @rr:=@rr+1
+ELSE @rr:=1
+END   AS rank,bill_date,sum_all,吃过的菜,新菜占比,@member_id :=member_id  FROM (
+SELECT member_id,bill_date,sum_all,COUNT(1) AS '吃过的菜',1-ROUND(COUNT(1)/sum_all,2) AS '新菜占比' FROM (
+SELECT a.member_id,a.bill_date,a.sum_all,b.dish_name FROM (
+SELECT member_id,bill_date,COUNT(1) AS sum_all FROM (
+SELECT conn.`member_id`,dish.`dish_name`,conn.`bill_date`
+FROM   `pos_consumption` AS conn 
+INNER JOIN pos_dining_order AS porder ON conn.consumption_id = porder.consumption_id AND conn.created_org = porder.created_org
+INNER JOIN pos_order_dish AS dish ON porder.order_id=dish.dining_order_id AND dish.created_org=porder.created_org
+WHERE conn.`status_code`=1 AND conn.member_id<>0 
+GROUP BY conn.`member_id`,conn.`bill_date`,dish.`dish_name`) a
+GROUP BY member_id,bill_date) a LEFT JOIN (SELECT conn.`member_id`,dish.`dish_name`,conn.`bill_date`
+FROM   `pos_consumption` AS conn 
+INNER JOIN pos_dining_order AS porder ON conn.consumption_id = porder.consumption_id AND conn.created_org = porder.created_org
+INNER JOIN pos_order_dish AS dish ON porder.order_id=dish.dining_order_id AND dish.created_org=porder.created_org
+WHERE conn.`status_code`=1 AND conn.member_id<>0 
+GROUP BY conn.`member_id`,conn.`bill_date`,dish.`dish_name`) b ON a.member_id=b.member_id AND a.bill_date=b.bill_date
+WHERE pre_dish_name(a.member_id,a.bill_date) LIKE CONCAT('%',b.dish_name,'%'))a
+GROUP BY member_id,bill_date)a)a
