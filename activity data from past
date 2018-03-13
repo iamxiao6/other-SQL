@@ -1,0 +1,292 @@
+
+#219 and 219
+USE 0002333772_pos;
+
+
+
+SELECT SUM(need_pay_amount)/COUNT(0) INTO @avg1 FROM pos_consumption WHERE status_code=1 AND member_id !=0;
+
+SELECT SUM(porder_date_calc.datedif)/SUM(porder_date_calc.con_cou) *1.5 INTO @avg_pay FROM (
+SELECT DATEDIFF(MAX(porder.bill_date), MIN(porder.bill_date)) AS datedif,COUNT(0)-1 AS con_cou
+FROM pos_dining_order AS porder
+INNER JOIN `rv_ol_fans` AS fan ON fan.`member_id` = porder.member_id
+WHERE  porder.`status_code`=1 AND porder.member_id<>0 AND porder.member_id<>1 
+GROUP BY porder.member_id
+HAVING COUNT(0)>1
+)
+AS porder_date_calc;
+
+SELECT '2017-12-22 00:00:00' INTO @nowtime;
+
+SELECT a.member_con_type,count_all,sum_all,IFNULL(ROUND(count_all/sum_all,2),0) FROM (
+
+
+SELECT member_con_type,COUNT(1) AS sum_all FROM (SELECT 
+member_count.member_id,
+member_count.open_id,
+member_count.sum_all AS sum_all,
+member_days.member_con_type,
+0 AS bill_date
+
+
+
+FROM (
+SELECT fan.member_id, bind.open_id,abc.sum_all FROM (
+SELECT member_id, COUNT(0) AS sum_all FROM   `pos_consumption` AS conn
+WHERE conn.`status_code`=1 AND member_id<>0  AND conn.order_property !=2 AND conn.bill_date <@nowtime
+GROUP BY conn.member_id
+HAVING COUNT(0)>=2 ORDER BY COUNT(0) DESC) AS abc
+INNER JOIN `rv_ol_fans` AS fan  ON fan.`member_id`= abc.member_id
+INNER JOIN `0002333772_baseinfo`.`ol_fans_sns_bind` AS bind USE INDEX (idx_fans_id) ON fan.fans_id=bind.fans_id AND subscribed_time <=@nowtime AND (unsubscribed_time >=@nowtime OR is_subscribed=1)
+) AS member_count 
+
+LEFT JOIN `0002333772_member`.`mem_card` AS mcard ON mcard.member_id = member_count.member_id 
+
+#用户细分
+LEFT JOIN (
+SELECT porder.member_id, COUNT(0) AS sum_all,
+         
+
+          CASE WHEN COUNT(0)>2 AND DATEDIFF(@nowtime, MAX(porder.bill_date))<= DATEDIFF(MAX(porder.bill_date), MIN(porder.bill_date))/ (COUNT(0) - 1)*1.5
+            THEN '忠诚用户'
+            WHEN COUNT(0)=2 AND DATEDIFF(@nowtime, MAX(porder.bill_date))<= @avg_pay
+            THEN '忠诚用户'
+            WHEN COUNT(0)>2 AND DATEDIFF(@nowtime, MAX(porder.bill_date))> DATEDIFF(MAX(porder.bill_date), MIN(porder.bill_date))/ (COUNT(0) - 1)*1.5
+            THEN '沉睡用户'
+            WHEN COUNT(0)=2 AND DATEDIFF(@nowtime, MAX(porder.bill_date))> @avg_pay
+            THEN '沉睡用户'
+            ELSE '' 
+          END
+          AS 'member_con_type',0 AS bill_date
+  FROM pos_consumption AS porder
+       INNER JOIN `rv_ol_fans` AS fan ON fan.`member_id` = porder.member_id
+       INNER JOIN `0002333772_baseinfo`.`ol_fans_sns_bind` AS bind USE INDEX (idx_fans_id) ON fan.fans_id=bind.fans_id   AND subscribed_time <=@nowtime AND (unsubscribed_time >=@nowtime OR is_subscribed=1)
+ WHERE porder.`status_code` = 1 AND porder.member_id <> 0
+ AND porder.order_property !=2
+GROUP BY porder.member_id
+HAVING COUNT(0) > 1
+) AS member_days ON member_days.member_id=member_count.member_id
+
+
+
+
+UNION ALL
+#普通会员   消费次数=1次，消费间隔<=平均沉睡周期
+
+SELECT conn.member_id ,  bind.open_id,COUNT(0) AS sum_all,'普通用户' AS member_con_type,conn.bill_date
+FROM   `pos_consumption` AS conn
+INNER JOIN `rv_ol_fans` AS fan  ON fan.`member_id`= conn.member_id
+INNER JOIN `0002333772_baseinfo`.`ol_fans_sns_bind` AS bind USE INDEX (idx_fans_id)  ON fan.fans_id=bind.fans_id   AND subscribed_time <=@nowtime AND (unsubscribed_time >=@nowtime OR is_subscribed=1)
+LEFT JOIN `0002333772_member`.`mem_card` AS mcard ON mcard.member_id = fan.member_id 
+WHERE conn.`status_code`=1 AND conn.member_id<>0 
+ AND conn.order_property !=2 AND conn.bill_date <@nowtime
+GROUP BY conn.member_id
+HAVING COUNT(0)=1 AND DATEDIFF(@nowtime,conn.bill_date)<=@avg_pay
+
+UNION ALL
+
+#流失会员   消费次数=1次，消费间隔>平均沉睡周期
+SELECT conn.member_id,  bind.open_id, COUNT(0) AS sum_all,'流失用户'AS member_con_type  ,conn.bill_date
+FROM   `pos_consumption` AS conn
+INNER JOIN `rv_ol_fans` AS fan  ON fan.`member_id`= conn.member_id
+INNER JOIN `0002333772_baseinfo`.`ol_fans_sns_bind` AS bind USE INDEX (idx_fans_id) ON fan.fans_id=bind.fans_id   AND subscribed_time <=@nowtime AND (unsubscribed_time >=@nowtime OR is_subscribed=1)
+LEFT JOIN `0002333772_member`.`mem_card` AS mcard ON mcard.member_id = fan.member_id 
+WHERE conn.`status_code`=1 AND conn.member_id<>0 
+AND conn.order_property !=2 AND conn.bill_date <@nowtime
+GROUP BY conn.member_id
+HAVING COUNT(0)=1   AND DATEDIFF(@nowtime,conn.bill_date)>@avg_pay 
+
+UNION ALL
+
+#陪同用户，没有消费记录
+SELECT  
+ fan.member_id, bind.open_id,  0 AS sum_all ,'陪同用户' AS member_con_type ,0 AS bill_date
+FROM    `rv_ol_fans` AS fan 
+INNER JOIN `0002333772_baseinfo`.`ol_fans_sns_bind` AS bind USE INDEX (idx_fans_id) ON fan.fans_id=bind.fans_id   AND subscribed_time <=@nowtime AND (unsubscribed_time >=@nowtime OR is_subscribed=1)
+LEFT JOIN pos_consumption AS conn ON conn.member_id=fan.member_id
+LEFT JOIN `0002333772_member`.`mem_card` AS mcard ON mcard.member_id = fan.member_id 
+WHERE  fan.member_id<>0 AND  conn.member_id IS NULL AND fan.source_type IN(1,3,4,6,14,18,19)  # 来源类型（1-自行关注，2-通过砍价活动关注，3-通过扫描POS台单关注）
+
+UNION ALL
+#潜在用户，消费次数为0,非店内关注
+SELECT  
+ fan.member_id, bind.open_id,  0 AS sum_all ,'潜在用户' AS member_con_type ,0 AS bill_date
+FROM    `rv_ol_fans` AS fan 
+INNER JOIN `0002333772_baseinfo`.`ol_fans_sns_bind` AS bind USE INDEX (idx_fans_id) ON fan.fans_id=bind.fans_id   AND subscribed_time <=@nowtime AND (unsubscribed_time >=@nowtime OR is_subscribed=1)
+LEFT JOIN pos_consumption AS conn ON conn.member_id=fan.member_id
+LEFT JOIN `0002333772_member`.`mem_card` AS mcard ON mcard.member_id = fan.member_id 
+WHERE  fan.member_id<>0 AND  conn.member_id IS NULL AND fan.source_type NOT IN(1,3,4,6,14,18,19)
+
+
+UNION ALL
+#潜在用户，消费次数为0,非店内关注
+SELECT  
+ 1 AS member_id,bind.open_id,  0   AS sum_all ,'潜在用户' AS member_con_type ,0 AS bill_date
+FROM    `rv_ol_fans` AS fan 
+INNER JOIN `0002333772_baseinfo`.`ol_fans_sns_bind` AS bind USE INDEX (idx_fans_id) ON fan.fans_id=bind.fans_id   AND bind.sns_type=1 AND is_subscribed=1
+WHERE  fan.member_id=0 
+
+
+
+
+
+ )a GROUP BY member_con_type) a LEFT JOIN 
+
+
+
+(SELECT member_con_type, COUNT(1) AS count_all FROM 
+(
+
+SELECT a.member_id,CASE WHEN b.member_con_type IS NOT NULL THEN b.member_con_type ELSE '潜在用户'  END AS member_con_type ,a.name1 FROM (SELECT  ticket.bill_date AS use_date,
+    ticket.open_id open_id,
+                 ticket.member_id,
+                 ticket.ticket_type_name AS name1,
+                 ticket.money,
+                 ticket.people_num
+                 
+                 FROM
+                 (
+                 SELECT  ps.bill_date,
+                 bind.open_id ,
+                 tt.created_on,
+                 tt.ticket_id,
+                 tt.member_id,
+                 IF(ISNULL(of.nick_name),'-',of.nick_name) nick_name,
+                 tt.consume_no,
+                 tt.ticket_type_id,
+                 tt.consumption_org,
+                 ttt.wx_ticket_type_id,
+                 ttt.ticket_type_name,
+                 ttts.strategy_name,
+                 ps.serial_number,
+                 ps.money,
+                 ps.people_num,
+                 
+                 bo.organization_name
+                 FROM rv_ti_ticket tt
+                 INNER JOIN rv_ti_ticket_type  ttt ON tt.ticket_type_id=ttt.ticket_type_id
+                 LEFT JOIN pos_consumption ps ON tt.consumption_id=ps.consumption_id AND tt.consumption_org=ps.created_org
+                 LEFT JOIN rv_ti_ticket_strategy ttts ON ttts.ticket_strategy_id=tt.ticket_strategy_id AND ttts.status_code=1
+                 LEFT JOIN rv_bi_organization AS bo ON bo.organization_id = tt.consumption_org
+                 LEFT JOIN rv_ol_fans of ON tt.fans_id=of.fans_id
+                 LEFT JOIN  `0002333772_baseinfo`.`ol_fans_sns_bind` AS bind USE INDEX (idx_fans_id)  ON of.fans_id=bind.fans_id  AND bind.sns_type=1 AND bind.`is_subscribed`=1
+                 WHERE tt.status_code=1
+                 AND tt.ticket_status=3
+                 AND ttt.is_wx_ticket=1
+                AND ttt.wx_ticket_type_id BETWEEN 219 AND 219
+           
+               
+                 ) ticket) a 
+
+
+
+LEFT JOIN 
+
+
+
+(SELECT 
+member_count.member_id,
+member_count.open_id,
+member_count.sum_all AS sum_all,
+member_days.member_con_type,
+0 AS bill_date
+
+
+
+FROM (
+SELECT fan.member_id, bind.open_id,abc.sum_all FROM (
+SELECT member_id, COUNT(0) AS sum_all FROM   `pos_consumption` AS conn
+WHERE conn.`status_code`=1 AND member_id<>0  AND conn.order_property !=2 AND conn.bill_date <@nowtime
+GROUP BY conn.member_id
+HAVING COUNT(0)>=2 ORDER BY COUNT(0) DESC) AS abc
+INNER JOIN `rv_ol_fans` AS fan  ON fan.`member_id`= abc.member_id
+INNER JOIN `0002333772_baseinfo`.`ol_fans_sns_bind` AS bind USE INDEX (idx_fans_id) ON fan.fans_id=bind.fans_id AND subscribed_time <=@nowtime AND (unsubscribed_time >=@nowtime OR is_subscribed=1)
+) AS member_count 
+
+LEFT JOIN `0002333772_member`.`mem_card` AS mcard ON mcard.member_id = member_count.member_id 
+
+#用户细分
+LEFT JOIN (
+SELECT porder.member_id, COUNT(0) AS sum_all,
+         
+
+          CASE WHEN COUNT(0)>2 AND DATEDIFF(@nowtime, MAX(porder.bill_date))<= DATEDIFF(MAX(porder.bill_date), MIN(porder.bill_date))/ (COUNT(0) - 1)*1.5
+            THEN '忠诚用户'
+            WHEN COUNT(0)=2 AND DATEDIFF(@nowtime, MAX(porder.bill_date))<= @avg_pay
+            THEN '忠诚用户'
+            WHEN COUNT(0)>2 AND DATEDIFF(@nowtime, MAX(porder.bill_date))> DATEDIFF(MAX(porder.bill_date), MIN(porder.bill_date))/ (COUNT(0) - 1)*1.5
+            THEN '沉睡用户'
+            WHEN COUNT(0)=2 AND DATEDIFF(@nowtime, MAX(porder.bill_date))> @avg_pay
+            THEN '沉睡用户'
+            ELSE '' 
+          END
+          AS 'member_con_type',0 AS bill_date
+  FROM pos_consumption AS porder
+       INNER JOIN `rv_ol_fans` AS fan ON fan.`member_id` = porder.member_id
+       INNER JOIN `0002333772_baseinfo`.`ol_fans_sns_bind` AS bind USE INDEX (idx_fans_id) ON fan.fans_id=bind.fans_id   AND subscribed_time <=@nowtime AND (unsubscribed_time >=@nowtime OR is_subscribed=1)
+ WHERE porder.`status_code` = 1 AND porder.member_id <> 0
+ AND porder.order_property !=2
+GROUP BY porder.member_id
+HAVING COUNT(0) > 1
+) AS member_days ON member_days.member_id=member_count.member_id
+
+
+
+
+UNION ALL
+#普通会员   消费次数=1次，消费间隔<=平均沉睡周期
+
+SELECT conn.member_id ,  bind.open_id,COUNT(0) AS sum_all,'普通用户' AS member_con_type,conn.bill_date
+FROM   `pos_consumption` AS conn
+INNER JOIN `rv_ol_fans` AS fan  ON fan.`member_id`= conn.member_id
+INNER JOIN `0002333772_baseinfo`.`ol_fans_sns_bind` AS bind USE INDEX (idx_fans_id)  ON fan.fans_id=bind.fans_id   AND subscribed_time <=@nowtime AND (unsubscribed_time >=@nowtime OR is_subscribed=1)
+LEFT JOIN `0002333772_member`.`mem_card` AS mcard ON mcard.member_id = fan.member_id 
+WHERE conn.`status_code`=1 AND conn.member_id<>0 
+ AND conn.order_property !=2 AND conn.bill_date <@nowtime
+GROUP BY conn.member_id
+HAVING COUNT(0)=1 AND DATEDIFF(@nowtime,conn.bill_date)<=@avg_pay
+
+UNION ALL
+
+#流失会员   消费次数=1次，消费间隔>平均沉睡周期
+SELECT conn.member_id,  bind.open_id, COUNT(0) AS sum_all,'流失用户'AS member_con_type  ,conn.bill_date
+FROM   `pos_consumption` AS conn
+INNER JOIN `rv_ol_fans` AS fan  ON fan.`member_id`= conn.member_id
+INNER JOIN `0002333772_baseinfo`.`ol_fans_sns_bind` AS bind USE INDEX (idx_fans_id) ON fan.fans_id=bind.fans_id   AND subscribed_time <=@nowtime AND (unsubscribed_time >=@nowtime OR is_subscribed=1)
+LEFT JOIN `0002333772_member`.`mem_card` AS mcard ON mcard.member_id = fan.member_id 
+WHERE conn.`status_code`=1 AND conn.member_id<>0 
+AND conn.order_property !=2 AND conn.bill_date <@nowtime
+GROUP BY conn.member_id
+HAVING COUNT(0)=1   AND DATEDIFF(@nowtime,conn.bill_date)>@avg_pay 
+
+UNION ALL
+
+#陪同用户，没有消费记录
+SELECT  
+ fan.member_id, bind.open_id,  0 AS sum_all ,'陪同用户' AS member_con_type ,0 AS bill_date
+FROM    `rv_ol_fans` AS fan 
+INNER JOIN `0002333772_baseinfo`.`ol_fans_sns_bind` AS bind USE INDEX (idx_fans_id) ON fan.fans_id=bind.fans_id   AND subscribed_time <=@nowtime AND (unsubscribed_time >=@nowtime OR is_subscribed=1)
+LEFT JOIN pos_consumption AS conn ON conn.member_id=fan.member_id
+LEFT JOIN `0002333772_member`.`mem_card` AS mcard ON mcard.member_id = fan.member_id 
+WHERE  fan.member_id<>0 AND  conn.member_id IS NULL AND fan.source_type IN(1,3,4,6,14,18,19)  # 来源类型（1-自行关注，2-通过砍价活动关注，3-通过扫描POS台单关注）
+
+UNION ALL
+#潜在用户，消费次数为0,非店内关注
+SELECT  
+ fan.member_id, bind.open_id,  0 AS sum_all ,'潜在用户' AS member_con_type ,0 AS bill_date
+FROM    `rv_ol_fans` AS fan 
+INNER JOIN `0002333772_baseinfo`.`ol_fans_sns_bind` AS bind USE INDEX (idx_fans_id) ON fan.fans_id=bind.fans_id   AND subscribed_time <=@nowtime AND (unsubscribed_time >=@nowtime OR is_subscribed=1)
+LEFT JOIN pos_consumption AS conn ON conn.member_id=fan.member_id
+LEFT JOIN `0002333772_member`.`mem_card` AS mcard ON mcard.member_id = fan.member_id 
+WHERE  fan.member_id<>0 AND  conn.member_id IS NULL AND fan.source_type NOT IN(1,3,4,6,14,18,19)
+
+UNION ALL
+#潜在用户，消费次数为0,非店内关注
+SELECT  
+ 1 AS member_id,bind.open_id,  0   AS sum_all ,'潜在用户' AS member_con_type ,0 AS bill_date
+FROM    `rv_ol_fans` AS fan 
+INNER JOIN `0002333772_baseinfo`.`ol_fans_sns_bind` AS bind USE INDEX (idx_fans_id) ON fan.fans_id=bind.fans_id   AND bind.sns_type=1 AND is_subscribed=1
+WHERE  fan.member_id=0 
+
+) b ON a.member_id=b.member_id) a GROUP BY member_con_type) b ON a.member_con_type=b.member_con_type
+ORDER BY FIELD(a.member_con_type,'忠沉用户','沉睡用户','普通用户','流失用户','陪同用户','潜在用户')
