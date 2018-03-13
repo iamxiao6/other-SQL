@@ -1,0 +1,433 @@
+SELECT @rr:=1;
+SELECT @member_id =1;
+
+
+SELECT COUNT(DISTINCT a.member_id) FROM (
+
+SELECT member_id,dish_name1 FROM (
+SELECT member_id,  CASE 
+WHEN @member_id =member_id THEN @rr:=@rr+1
+ELSE @rr:=1 END  AS rank,dish_name1,sum_all,@member_id :=member_id FROM (SELECT * FROM 
+
+(
+
+SELECT a.member_id,a.dish_name1,ROUND(a.sum_all*c.ss,0) AS sum_all,b.con_sum FROM (
+SELECT member_id,dish_name1,COUNT(1) AS sum_all FROM (
+
+SELECT member_id,dish_name1 FROM groups
+WHERE dish_name1 IS NOT NULL
+AND dish_name1 !=''
+UNION ALL
+SELECT member_id,dish_name2 FROM groups
+WHERE dish_name2 IS NOT NULL
+AND dish_name2 !=''
+UNION ALL
+SELECT member_id,dish_name3 FROM groups
+WHERE dish_name3 IS NOT NULL
+AND dish_name3 !=''
+UNION ALL
+SELECT member_id,dish_name4 FROM groups
+WHERE dish_name4 IS NOT NULL
+AND dish_name4 !=''
+UNION ALL
+SELECT member_id,dish_name5 FROM groups
+WHERE dish_name5 IS NOT NULL
+AND dish_name5 !=''
+UNION ALL
+SELECT member_id,dish_name6 FROM groups
+WHERE dish_name6 IS NOT NULL
+AND dish_name6 !=''
+)a
+GROUP BY member_id,dish_name1) a LEFT JOIN `member_dish_top` b ON a.dish_name1=b.dish_name
+LEFT JOIN (SELECT dish_name, 2.25 AS ss FROM `pos_dish_tag`
+WHERE flag1 =1
+UNION ALL
+SELECT dish_name, 1.5 AS ss FROM `pos_dish_tag`
+WHERE flag2 =1
+UNION ALL
+SELECT dish_name, 1 AS ss FROM `pos_dish_tag`
+WHERE flag3 =1) c ON a.dish_name1=c.dish_name
+ORDER BY member_id, sum_all DESC ,con_sum DESC)a)a)a
+WHERE rank IN (1) 
+
+
+
+UNION ALL
+
+
+SELECT member_id,dish_name1 FROM (
+SELECT member_id,  CASE 
+WHEN @member_id =member_id THEN @rr:=@rr+1
+ELSE @rr:=1 END  AS rank,dish_name1,sum_all,@member_id :=member_id FROM (SELECT * FROM 
+
+(
+
+SELECT a.member_id,a.dish_name1,ROUND(a.sum_all*c.ss,0) AS sum_all,b.con_sum FROM (
+SELECT member_id,dish_name1,COUNT(1) AS sum_all FROM (
+
+SELECT member_id,a.dish_name1 FROM  (SELECT a.*,b.dish_name1 AS cccc FROM groups a LEFT JOIN (SELECT member_id,dish_name1 FROM (
+SELECT member_id,  CASE 
+WHEN @member_id =member_id THEN @rr:=@rr+1
+ELSE @rr:=1 END  AS rank,dish_name1,sum_all,@member_id :=member_id FROM (SELECT * FROM 
+
+(
+
+SELECT a.member_id,a.dish_name1,ROUND(a.sum_all*c.ss,0) AS sum_all,b.con_sum FROM (
+SELECT member_id,dish_name1,COUNT(1) AS sum_all FROM (
+
+SELECT member_id,dish_name1 FROM groups
+WHERE dish_name1 IS NOT NULL
+AND dish_name1 !=''
+UNION ALL
+SELECT member_id,dish_name2 FROM groups
+WHERE dish_name2 IS NOT NULL
+AND dish_name2 !=''
+UNION ALL
+SELECT member_id,dish_name3 FROM groups
+WHERE dish_name3 IS NOT NULL
+AND dish_name3 !=''
+UNION ALL
+SELECT member_id,dish_name4 FROM groups
+WHERE dish_name4 IS NOT NULL
+AND dish_name4 !=''
+UNION ALL
+SELECT member_id,dish_name5 FROM groups
+WHERE dish_name5 IS NOT NULL
+AND dish_name5 !=''
+UNION ALL
+SELECT member_id,dish_name6 FROM groups
+WHERE dish_name6 IS NOT NULL
+AND dish_name6 !=''
+)a
+GROUP BY member_id,dish_name1) a LEFT JOIN `member_dish_top` b ON a.dish_name1=b.dish_name
+LEFT JOIN (SELECT dish_name, 2.25 AS ss FROM `pos_dish_tag`
+WHERE flag1 =1
+UNION ALL
+SELECT dish_name, 1.5 AS ss FROM `pos_dish_tag`
+WHERE flag2 =1
+UNION ALL
+SELECT dish_name, 1 AS ss FROM `pos_dish_tag`
+WHERE flag3 =1) c ON a.dish_name1=c.dish_name
+ORDER BY member_id, sum_all DESC ,con_sum DESC)a)a)a
+WHERE rank IN (1) ) 
+b ON a.member_id=b.member_id
+WHERE a.dish_name1 NOT LIKE b.dish_name1
+AND a.dish_name2 NOT LIKE b.dish_name1
+ AND a.dish_name3 NOT LIKE b.dish_name1
+AND a.dish_name4 NOT LIKE b.dish_name1
+AND a.dish_name5 NOT LIKE b.dish_name1
+AND a.dish_name6 NOT LIKE b.dish_name1) a
+WHERE a.dish_name1 IS NOT NULL
+AND a.dish_name1 !=''
+
+
+
+
+UNION ALL
+SELECT member_id,dish_name2 FROM (SELECT a.*,b.dish_name1 AS cccc FROM groups a LEFT JOIN (SELECT member_id,dish_name1 FROM (
+SELECT member_id,  CASE 
+WHEN @member_id =member_id THEN @rr:=@rr+1
+ELSE @rr:=1 END  AS rank,dish_name1,sum_all,@member_id :=member_id FROM (SELECT * FROM 
+
+(
+
+SELECT a.member_id,a.dish_name1,ROUND(a.sum_all*c.ss,0) AS sum_all,b.con_sum FROM (
+SELECT member_id,dish_name1,COUNT(1) AS sum_all FROM (
+
+SELECT member_id,dish_name1 FROM groups
+WHERE dish_name1 IS NOT NULL
+AND dish_name1 !=''
+UNION ALL
+SELECT member_id,dish_name2 FROM groups
+WHERE dish_name2 IS NOT NULL
+AND dish_name2 !=''
+UNION ALL
+SELECT member_id,dish_name3 FROM groups
+WHERE dish_name3 IS NOT NULL
+AND dish_name3 !=''
+UNION ALL
+SELECT member_id,dish_name4 FROM groups
+WHERE dish_name4 IS NOT NULL
+AND dish_name4 !=''
+UNION ALL
+SELECT member_id,dish_name5 FROM groups
+WHERE dish_name5 IS NOT NULL
+AND dish_name5 !=''
+UNION ALL
+SELECT member_id,dish_name6 FROM groups
+WHERE dish_name6 IS NOT NULL
+AND dish_name6 !=''
+)a
+GROUP BY member_id,dish_name1) a LEFT JOIN `member_dish_top` b ON a.dish_name1=b.dish_name
+LEFT JOIN (SELECT dish_name, 2.25 AS ss FROM `pos_dish_tag`
+WHERE flag1 =1
+UNION ALL
+SELECT dish_name, 1.5 AS ss FROM `pos_dish_tag`
+WHERE flag2 =1
+UNION ALL
+SELECT dish_name, 1 AS ss FROM `pos_dish_tag`
+WHERE flag3 =1) c ON a.dish_name1=c.dish_name
+ORDER BY member_id, sum_all DESC ,con_sum DESC)a)a)a
+WHERE rank IN (1) ) 
+b ON a.member_id=b.member_id
+WHERE a.dish_name1 NOT LIKE b.dish_name1
+AND a.dish_name2 NOT LIKE b.dish_name1
+ AND a.dish_name3 NOT LIKE b.dish_name1
+AND a.dish_name4 NOT LIKE b.dish_name1
+AND a.dish_name5 NOT LIKE b.dish_name1
+AND a.dish_name6 NOT LIKE b.dish_name1) a
+WHERE dish_name2 IS NOT NULL
+AND dish_name2 !=''
+
+UNION ALL
+
+SELECT member_id,dish_name3 FROM (SELECT a.*,b.dish_name1 AS cccc FROM groups a LEFT JOIN (SELECT member_id,dish_name1 FROM (
+SELECT member_id,  CASE 
+WHEN @member_id =member_id THEN @rr:=@rr+1
+ELSE @rr:=1 END  AS rank,dish_name1,sum_all,@member_id :=member_id FROM (SELECT * FROM 
+
+(
+
+SELECT a.member_id,a.dish_name1,ROUND(a.sum_all*c.ss,0) AS sum_all,b.con_sum FROM (
+SELECT member_id,dish_name1,COUNT(1) AS sum_all FROM (
+
+SELECT member_id,dish_name1 FROM groups
+WHERE dish_name1 IS NOT NULL
+AND dish_name1 !=''
+UNION ALL
+SELECT member_id,dish_name2 FROM groups
+WHERE dish_name2 IS NOT NULL
+AND dish_name2 !=''
+UNION ALL
+SELECT member_id,dish_name3 FROM groups
+WHERE dish_name3 IS NOT NULL
+AND dish_name3 !=''
+UNION ALL
+SELECT member_id,dish_name4 FROM groups
+WHERE dish_name4 IS NOT NULL
+AND dish_name4 !=''
+UNION ALL
+SELECT member_id,dish_name5 FROM groups
+WHERE dish_name5 IS NOT NULL
+AND dish_name5 !=''
+UNION ALL
+SELECT member_id,dish_name6 FROM groups
+WHERE dish_name6 IS NOT NULL
+AND dish_name6 !=''
+)a
+GROUP BY member_id,dish_name1) a LEFT JOIN `member_dish_top` b ON a.dish_name1=b.dish_name
+LEFT JOIN (SELECT dish_name, 2.25 AS ss FROM `pos_dish_tag`
+WHERE flag1 =1
+UNION ALL
+SELECT dish_name, 1.5 AS ss FROM `pos_dish_tag`
+WHERE flag2 =1
+UNION ALL
+SELECT dish_name, 1 AS ss FROM `pos_dish_tag`
+WHERE flag3 =1) c ON a.dish_name1=c.dish_name
+ORDER BY member_id, sum_all DESC ,con_sum DESC)a)a)a
+WHERE rank IN (1) ) 
+b ON a.member_id=b.member_id
+WHERE a.dish_name1 NOT LIKE b.dish_name1
+AND a.dish_name2 NOT LIKE b.dish_name1
+ AND a.dish_name3 NOT LIKE b.dish_name1
+AND a.dish_name4 NOT LIKE b.dish_name1
+AND a.dish_name5 NOT LIKE b.dish_name1
+AND a.dish_name6 NOT LIKE b.dish_name1) a
+WHERE dish_name3 IS NOT NULL
+AND dish_name3 !=''
+
+
+
+UNION ALL
+
+
+SELECT member_id,dish_name4 FROM (SELECT a.*,b.dish_name1 AS cccc FROM groups a LEFT JOIN (SELECT member_id,dish_name1 FROM (
+SELECT member_id,  CASE 
+WHEN @member_id =member_id THEN @rr:=@rr+1
+ELSE @rr:=1 END  AS rank,dish_name1,sum_all,@member_id :=member_id FROM (SELECT * FROM 
+
+(
+
+SELECT a.member_id,a.dish_name1,ROUND(a.sum_all*c.ss,0) AS sum_all,b.con_sum FROM (
+SELECT member_id,dish_name1,COUNT(1) AS sum_all FROM (
+
+SELECT member_id,dish_name1 FROM groups
+WHERE dish_name1 IS NOT NULL
+AND dish_name1 !=''
+UNION ALL
+SELECT member_id,dish_name2 FROM groups
+WHERE dish_name2 IS NOT NULL
+AND dish_name2 !=''
+UNION ALL
+SELECT member_id,dish_name3 FROM groups
+WHERE dish_name3 IS NOT NULL
+AND dish_name3 !=''
+UNION ALL
+SELECT member_id,dish_name4 FROM groups
+WHERE dish_name4 IS NOT NULL
+AND dish_name4 !=''
+UNION ALL
+SELECT member_id,dish_name5 FROM groups
+WHERE dish_name5 IS NOT NULL
+AND dish_name5 !=''
+UNION ALL
+SELECT member_id,dish_name6 FROM groups
+WHERE dish_name6 IS NOT NULL
+AND dish_name6 !=''
+)a
+GROUP BY member_id,dish_name1) a LEFT JOIN `member_dish_top` b ON a.dish_name1=b.dish_name
+LEFT JOIN (SELECT dish_name, 2.25 AS ss FROM `pos_dish_tag`
+WHERE flag1 =1
+UNION ALL
+SELECT dish_name, 1.5 AS ss FROM `pos_dish_tag`
+WHERE flag2 =1
+UNION ALL
+SELECT dish_name, 1 AS ss FROM `pos_dish_tag`
+WHERE flag3 =1) c ON a.dish_name1=c.dish_name
+ORDER BY member_id, sum_all DESC ,con_sum DESC)a)a)a
+WHERE rank IN (1) ) 
+b ON a.member_id=b.member_id
+WHERE a.dish_name1 NOT LIKE b.dish_name1
+AND a.dish_name2 NOT LIKE b.dish_name1
+ AND a.dish_name3 NOT LIKE b.dish_name1
+AND a.dish_name4 NOT LIKE b.dish_name1
+AND a.dish_name5 NOT LIKE b.dish_name1
+AND a.dish_name6 NOT LIKE b.dish_name1) a
+WHERE dish_name4 IS NOT NULL
+AND dish_name4 !=''
+
+UNION ALL
+
+SELECT member_id,dish_name5 FROM (SELECT a.*,b.dish_name1 AS cccc FROM groups a LEFT JOIN (SELECT member_id,dish_name1 FROM (
+SELECT member_id,  CASE 
+WHEN @member_id =member_id THEN @rr:=@rr+1
+ELSE @rr:=1 END  AS rank,dish_name1,sum_all,@member_id :=member_id FROM (SELECT * FROM 
+
+(
+
+SELECT a.member_id,a.dish_name1,ROUND(a.sum_all*c.ss,0) AS sum_all,b.con_sum FROM (
+SELECT member_id,dish_name1,COUNT(1) AS sum_all FROM (
+
+SELECT member_id,dish_name1 FROM groups
+WHERE dish_name1 IS NOT NULL
+AND dish_name1 !=''
+UNION ALL
+SELECT member_id,dish_name2 FROM groups
+WHERE dish_name2 IS NOT NULL
+AND dish_name2 !=''
+UNION ALL
+SELECT member_id,dish_name3 FROM groups
+WHERE dish_name3 IS NOT NULL
+AND dish_name3 !=''
+UNION ALL
+SELECT member_id,dish_name4 FROM groups
+WHERE dish_name4 IS NOT NULL
+AND dish_name4 !=''
+UNION ALL
+SELECT member_id,dish_name5 FROM groups
+WHERE dish_name5 IS NOT NULL
+AND dish_name5 !=''
+UNION ALL
+SELECT member_id,dish_name6 FROM groups
+WHERE dish_name6 IS NOT NULL
+AND dish_name6 !=''
+)a
+GROUP BY member_id,dish_name1) a LEFT JOIN `member_dish_top` b ON a.dish_name1=b.dish_name
+LEFT JOIN (SELECT dish_name, 2.25 AS ss FROM `pos_dish_tag`
+WHERE flag1 =1
+UNION ALL
+SELECT dish_name, 1.5 AS ss FROM `pos_dish_tag`
+WHERE flag2 =1
+UNION ALL
+SELECT dish_name, 1 AS ss FROM `pos_dish_tag`
+WHERE flag3 =1) c ON a.dish_name1=c.dish_name
+ORDER BY member_id, sum_all DESC ,con_sum DESC)a)a)a
+WHERE rank IN (1) ) 
+b ON a.member_id=b.member_id
+WHERE a.dish_name1 NOT LIKE b.dish_name1
+AND a.dish_name2 NOT LIKE b.dish_name1
+ AND a.dish_name3 NOT LIKE b.dish_name1
+AND a.dish_name4 NOT LIKE b.dish_name1
+AND a.dish_name5 NOT LIKE b.dish_name1
+AND a.dish_name6 NOT LIKE b.dish_name1) a
+WHERE dish_name5 IS NOT NULL
+AND dish_name5 !=''
+
+UNION ALL
+
+
+SELECT member_id,dish_name6 FROM (SELECT a.*,b.dish_name1 AS cccc FROM groups a LEFT JOIN (SELECT member_id,dish_name1 FROM (
+SELECT member_id,  CASE 
+WHEN @member_id =member_id THEN @rr:=@rr+1
+ELSE @rr:=1 END  AS rank,dish_name1,sum_all,@member_id :=member_id FROM (SELECT * FROM 
+
+(
+
+SELECT a.member_id,a.dish_name1,ROUND(a.sum_all*c.ss,0) AS sum_all,b.con_sum FROM (
+SELECT member_id,dish_name1,COUNT(1) AS sum_all FROM (
+
+SELECT member_id,dish_name1 FROM groups
+WHERE dish_name1 IS NOT NULL
+AND dish_name1 !=''
+UNION ALL
+SELECT member_id,dish_name2 FROM groups
+WHERE dish_name2 IS NOT NULL
+AND dish_name2 !=''
+UNION ALL
+SELECT member_id,dish_name3 FROM groups
+WHERE dish_name3 IS NOT NULL
+AND dish_name3 !=''
+UNION ALL
+SELECT member_id,dish_name4 FROM groups
+WHERE dish_name4 IS NOT NULL
+AND dish_name4 !=''
+UNION ALL
+SELECT member_id,dish_name5 FROM groups
+WHERE dish_name5 IS NOT NULL
+AND dish_name5 !=''
+UNION ALL
+SELECT member_id,dish_name6 FROM groups
+WHERE dish_name6 IS NOT NULL
+AND dish_name6 !=''
+)a
+GROUP BY member_id,dish_name1) a LEFT JOIN `member_dish_top` b ON a.dish_name1=b.dish_name
+LEFT JOIN (SELECT dish_name, 2.25 AS ss FROM `pos_dish_tag`
+WHERE flag1 =1
+UNION ALL
+SELECT dish_name, 1.5 AS ss FROM `pos_dish_tag`
+WHERE flag2 =1
+UNION ALL
+SELECT dish_name, 1 AS ss FROM `pos_dish_tag`
+WHERE flag3 =1) c ON a.dish_name1=c.dish_name
+ORDER BY member_id, sum_all DESC ,con_sum DESC)a)a)a
+WHERE rank IN (1) ) 
+b ON a.member_id=b.member_id
+WHERE a.dish_name1 NOT LIKE b.dish_name1
+AND a.dish_name2 NOT LIKE b.dish_name1
+ AND a.dish_name3 NOT LIKE b.dish_name1
+AND a.dish_name4 NOT LIKE b.dish_name1
+AND a.dish_name5 NOT LIKE b.dish_name1
+AND a.dish_name6 NOT LIKE b.dish_name1) a
+WHERE dish_name6 IS NOT NULL
+AND dish_name6 !=''
+
+
+
+
+)a
+GROUP BY member_id,dish_name1) a LEFT JOIN `member_dish_top` b ON a.dish_name1=b.dish_name
+LEFT JOIN (SELECT dish_name, 2.25 AS ss FROM `pos_dish_tag`
+WHERE flag1 =1
+UNION ALL
+SELECT dish_name, 1.5 AS ss FROM `pos_dish_tag`
+WHERE flag2 =1
+UNION ALL
+SELECT dish_name, 1 AS ss FROM `pos_dish_tag`
+WHERE flag3 =1) c ON a.dish_name1=c.dish_name
+ORDER BY member_id, sum_all DESC ,con_sum DESC)a)a)a
+WHERE rank IN (1) 
+) a LEFT JOIN `test_dish_end` b
+ON a.member_id=b.member_id
+WHERE b.fact_name LIKE CONCAT('%',a.dish_name1,'%');
+
+
